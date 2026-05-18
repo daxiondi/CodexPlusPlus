@@ -89,10 +89,10 @@ fn reports_relay_configured_when_required_keys_exist() {
     std::fs::write(
         temp.path().join("config.toml"),
         r#"model = "gpt-5"
-model_provider = "CodexPlusPlus"
+model_provider = "touka"
 OPENAI_API_KEY = "sk-should-be-removed"
-[model_providers.CodexPlusPlus]
-name = "CodexPlusPlus"
+[model_providers.touka]
+name = "Touka"
 wire_api = "responses"
 requires_openai_auth = true
 base_url = "http://192.168.188.245:3001/v1"
@@ -136,9 +136,9 @@ model = "gpt-5-mini"
 
     assert!(result.configured);
     assert!(updated.contains(r#"model = "gpt-5""#));
-    assert!(updated.contains(r#"model_provider = "CodexPlusPlus""#));
-    assert!(updated.contains("[model_providers.CodexPlusPlus]"));
-    assert!(updated.contains(r#"name = "CodexPlusPlus""#));
+    assert!(updated.contains(r#"model_provider = "touka""#));
+    assert!(updated.contains("[model_providers.touka]"));
+    assert!(updated.contains(r#"name = "Touka""#));
     assert!(updated.contains(r#"wire_api = "responses""#));
     assert!(updated.contains("requires_openai_auth = true"));
     assert!(updated.contains(r#"base_url = "https://relay.example.test/v1""#));
@@ -193,9 +193,9 @@ fn apply_pure_api_config_writes_openai_api_key_auth_json_and_provider() {
         auth,
         serde_json::json!({"OPENAI_API_KEY": "sk-test-redacted"})
     );
-    assert!(config.contains(r#"model_provider = "CodexPlusPlus""#));
-    assert!(config.contains("[model_providers.CodexPlusPlus]"));
-    assert!(config.contains(r#"name = "CodexPlusPlus""#));
+    assert!(config.contains(r#"model_provider = "touka""#));
+    assert!(config.contains("[model_providers.touka]"));
+    assert!(config.contains(r#"name = "Touka""#));
     assert!(config.contains(r#"wire_api = "responses""#));
     assert!(config.contains("requires_openai_auth = true"));
     assert!(config.contains(r#"base_url = "http://192.168.188.245:3001/v1""#));
@@ -306,12 +306,12 @@ model = "gpt-5-mini"
     )
     .unwrap();
     let updated = std::fs::read_to_string(temp.path().join("config.toml")).unwrap();
-    let provider_index = updated.find(r#"model_provider = "CodexPlusPlus""#).unwrap();
-    let codexpp_index = updated.find("[model_providers.CodexPlusPlus]").unwrap();
+    let provider_index = updated.find(r#"model_provider = "touka""#).unwrap();
+    let touka_index = updated.find("[model_providers.touka]").unwrap();
     let table_index = updated.find("[profiles.default]").unwrap();
 
     assert!(provider_index < table_index);
-    assert!(codexpp_index < table_index);
+    assert!(touka_index < table_index);
 }
 
 #[test]
@@ -335,9 +335,10 @@ base_url = "https://old.example.test/v1"
     .unwrap();
     let updated = std::fs::read_to_string(temp.path().join("config.toml")).unwrap();
 
-    assert!(updated.contains(r#"model_provider = "CodexPlusPlus""#));
-    assert!(updated.contains("[model_providers.CodexPlusPlus]"));
+    assert!(updated.contains(r#"model_provider = "touka""#));
+    assert!(updated.contains("[model_providers.touka]"));
     assert!(!updated.contains("[model_providers.CodexPP]"));
+    assert!(!updated.contains("[model_providers.CodexPlusPlus]"));
 }
 
 #[test]
@@ -346,13 +347,17 @@ fn clear_relay_config_removes_model_provider_and_preserves_other_config() {
     std::fs::write(
         temp.path().join("config.toml"),
         r#"model = "gpt-5"
-model_provider = "CodexPlusPlus"
-[model_providers.CodexPlusPlus]
-name = "CodexPlusPlus"
+model_provider = "touka"
+[model_providers.touka]
+name = "Touka"
 wire_api = "responses"
 requires_openai_auth = true
 base_url = "https://relay.example.test/v1"
 experimental_bearer_token = "sk-test-redacted"
+
+[model_providers.CodexPlusPlus]
+name = "CodexPlusPlus"
+base_url = "https://legacy.example.test/v1"
 
 [model_providers.CodexPP]
 name = "CodexPP"
@@ -377,6 +382,7 @@ model = "gpt-5-mini"
     assert!(updated.contains(r#"model = "gpt-5""#));
     assert!(!updated.contains("model_provider ="));
     assert!(!updated.contains("OPENAI_API_KEY"));
+    assert!(!updated.contains("[model_providers.touka]"));
     assert!(!updated.contains("[model_providers.CodexPlusPlus]"));
     assert!(!updated.contains("[model_providers.CodexPP]"));
     assert!(!updated.contains("experimental_bearer_token"));

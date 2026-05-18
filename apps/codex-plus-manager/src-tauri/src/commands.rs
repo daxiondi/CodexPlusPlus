@@ -993,7 +993,7 @@ pub fn clear_relay_injection() -> CommandResult<RelayPayload> {
         Ok(result) => {
             let status = codex_plus_core::relay_config::relay_status_from_home(&home);
             ok(
-                "已清除 CodexPlusPlus 中转 API 模式，并切换到官方 ChatGPT 登录模式。",
+                "已清除 touka 中转 API 模式，并切换到官方 ChatGPT 登录模式。",
                 relay_payload(status, result.backup_path),
             )
         }

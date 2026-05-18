@@ -1171,7 +1171,7 @@ function OverviewScreen({
 }) {
   const launchMode = settings?.settings.launchMode ?? "patch";
   const apiMode = apiModeLabel(relay);
-  const historyProvider = relay?.configured ? "CodexPlusPlus" : "openai";
+  const historyProvider = relay?.configured ? "touka" : "openai";
   const health = healthItems(overview, relay);
   return (
     <>
@@ -1324,7 +1324,7 @@ function RelayScreen({
             <Metric label="当前供应商" value={active.name || "-"} />
             <Metric label="接入模式" value={relayModeLabel(active.relayMode)} />
             <Metric label="上游协议" value={relayProtocolLabel(active.protocol)} />
-            <Metric label="历史会话" value={relay?.configured ? "CodexPlusPlus" : "openai"} />
+            <Metric label="历史会话" value={relay?.configured ? "touka" : "openai"} />
             <Metric label="页面增强" value={normalized.launchMode === "relay" ? "兼容模式" : "完整模式"} />
             <Metric label="配置状态" value={relay?.configured ? "已写入" : "官方默认"} />
           </div>
@@ -1550,7 +1550,7 @@ function ProviderSyncScreen({
               "自动修复只在 Codex++ 启动 Codex 前运行，不会常驻监控或反复改写。",
               "需要马上整理旧对话时，可以点击“立刻修复历史会话”。",
               "它不控制页面功能，也不影响 API URL 或 Key。",
-              "切回官方时历史会话会整理为 openai；切到 API 时会整理为 CodexPlusPlus。",
+              "切回官方时历史会话会整理为 openai；切到 API 时会整理为 touka。",
             ]}
           />
         </CardContent>

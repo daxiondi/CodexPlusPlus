@@ -77,10 +77,14 @@ fn resolves_packaged_resources_when_user_runtime_is_missing() {
 
 #[test]
 fn wrapper_dir_uses_roaming_codex_plus_plus() {
+    let roaming = PathBuf::from(r"C:\Users\me\AppData\Roaming");
+    let wrapper_dir = wrapper_dir_from_roaming(&roaming);
+
     assert_eq!(
-        wrapper_dir_from_roaming(&PathBuf::from(r"C:\Users\me\AppData\Roaming")),
-        PathBuf::from(r"C:\Users\me\AppData\Roaming\Codex++")
+        wrapper_dir.file_name().and_then(|name| name.to_str()),
+        Some("Codex++")
     );
+    assert_eq!(wrapper_dir.parent(), Some(roaming.as_path()));
 }
 
 #[test]

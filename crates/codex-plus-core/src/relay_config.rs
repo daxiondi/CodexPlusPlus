@@ -4,8 +4,9 @@ use std::path::{Path, PathBuf};
 
 use crate::settings::{RelayProfile, RelayProtocol};
 
-const RELAY_PROVIDER: &str = "CodexPlusPlus";
-const LEGACY_RELAY_PROVIDER: &str = "CodexPP";
+const RELAY_PROVIDER: &str = "touka";
+const RELAY_PROVIDER_NAME: &str = "Touka";
+const LEGACY_RELAY_PROVIDERS: &[&str] = &["CodexPlusPlus", "CodexPP"];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -335,19 +336,23 @@ pub fn clear_relay_config_to_home(home: &Path) -> anyhow::Result<RelayApplyResul
     clear_pure_api_auth_json(home)?;
     let config_path = home.join("config.toml");
     let existing = std::fs::read_to_string(&config_path).unwrap_or_default();
-    let without_relay = remove_root_key(
-        &remove_table(
-            &remove_table(&existing, &format!("model_providers.{RELAY_PROVIDER}")),
-            &format!("model_providers.{LEGACY_RELAY_PROVIDER}"),
-        ),
-        "OPENAI_API_KEY",
+    let backup_path = if config_path.exists() {
+        let path = home.join(format!("config.toml.codex-plus-backup-{}.bak", now_ms()));
+        std::fs::write(&path, &existing)?;
+        Some(path)
+    } else {
+        None
+    };
+    let without_relay = remove_root_key(&remove_relay_provider_tables(&existing), "OPENAI_API_KEY");
+    let updated = upsert_root_keys(
+        &without_relay,
+        &[("model_provider", "\"chatgpt\"".to_string())],
     );
-    let updated = remove_root_key(&without_relay, "model_provider");
     std::fs::write(&config_path, updated)?;
     let status = relay_config_status_from_home(home);
     Ok(RelayApplyResult {
         config_path: status.config_path,
-        backup_path: None,
+        backup_path: backup_path.map(|path| path.to_string_lossy().to_string()),
         configured: status.configured,
     })
 }
@@ -500,16 +505,13 @@ fn upsert_model_provider_config(contents: &str, base_url: &str, bearer_token: &s
         )],
     );
     updated = remove_table(&updated, &format!("model_providers.{RELAY_PROVIDER}"));
-    updated = remove_table(
-        &updated,
-        &format!("model_providers.{LEGACY_RELAY_PROVIDER}"),
-    );
+    updated = remove_relay_provider_tables(&updated);
 
     let mut lines = updated.lines().map(ToString::to_string).collect::<Vec<_>>();
     let insert_at = first_non_provider_table_index(&lines).unwrap_or(lines.len());
     let provider_lines = vec![
         format!("[model_providers.{RELAY_PROVIDER}]"),
-        format!("name = \"{}\"", toml_escape(RELAY_PROVIDER)),
+        format!("name = \"{}\"", toml_escape(RELAY_PROVIDER_NAME)),
         "wire_api = \"responses\"".to_string(),
         "requires_openai_auth = true".to_string(),
         format!("base_url = \"{}\"", toml_escape(base_url)),
@@ -525,6 +527,14 @@ fn upsert_model_provider_config(contents: &str, base_url: &str, bearer_token: &s
         output.push('\n');
     }
     output
+}
+
+fn remove_relay_provider_tables(contents: &str) -> String {
+    std::iter::once(RELAY_PROVIDER)
+        .chain(LEGACY_RELAY_PROVIDERS.iter().copied())
+        .fold(contents.to_string(), |updated, provider| {
+            remove_table(&updated, &format!("model_providers.{provider}"))
+        })
 }
 
 fn remove_table(contents: &str, table: &str) -> String {
