@@ -242,6 +242,13 @@ fn plist_string_value(plist: &str, key: &str) -> Option<String> {
     }
 }
 
+fn windows_package_dir_name(app_dir: &Path) -> Option<String> {
+    let path = app_dir.to_string_lossy();
+    let normalized = path.replace('\\', "/");
+    let normalized = normalized.strip_suffix("/app").unwrap_or(&normalized);
+    normalized.rsplit('/').next().map(ToString::to_string)
+}
+
 fn append_user_data_variants(candidates: &mut Vec<PathBuf>, base: &Path) {
     candidates.push(base.join("OpenAI").join("Codex"));
     candidates.push(base.join("OpenAI.Codex"));

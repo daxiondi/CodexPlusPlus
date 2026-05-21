@@ -380,7 +380,7 @@ model = "gpt-5-mini"
     assert!(!result.configured);
     assert!(result.backup_path.is_none());
     assert!(updated.contains(r#"model = "gpt-5""#));
-    assert!(!updated.contains("model_provider ="));
+    assert!(updated.contains(r#"model_provider = "chatgpt""#));
     assert!(!updated.contains("OPENAI_API_KEY"));
     assert!(!updated.contains("[model_providers.touka]"));
     assert!(!updated.contains("[model_providers.CodexPlusPlus]"));
