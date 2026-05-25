@@ -2781,10 +2781,10 @@ function buildRelayConfigToml(profile: Pick<RelayProfile, "baseUrl" | "apiKey" |
   const baseUrl = profile.protocol === "chatCompletions" ? PROTOCOL_PROXY_BASE_URL : profile.baseUrl.trim();
   const apiKey = profile.apiKey.trim();
   return [
-    'model_provider = "CodexPlusPlus"',
+    'model_provider = "touka"',
     "",
-    "[model_providers.CodexPlusPlus]",
-    'name = "CodexPlusPlus"',
+    "[model_providers.touka]",
+    'name = "Touka"',
     'wire_api = "responses"',
     "requires_openai_auth = true",
     `base_url = "${tomlString(baseUrl)}"`,

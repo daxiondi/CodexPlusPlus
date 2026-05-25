@@ -227,6 +227,9 @@ experimental_bearer_token = "sk-a"
 
     assert!(result.configured);
     assert!(result.backup_path.is_none());
+    assert!(config.contains(r#"model_provider = "touka""#));
+    assert!(config.contains("[model_providers.touka]"));
+    assert!(config.contains(r#"name = "Touka""#));
     assert!(config.contains(r#"base_url = "https://relay-a.example/v1""#));
     assert_eq!(auth, r#"{"OPENAI_API_KEY":"sk-a"}"#);
     assert!(std::fs::read_dir(temp.path()).unwrap().all(|entry| {
@@ -276,11 +279,11 @@ fn apply_relay_config_file_switches_config_without_touching_auth_json() {
     .unwrap();
 
     assert!(result.configured);
-    assert!(
-        std::fs::read_to_string(home.join("config.toml"))
-            .unwrap()
-            .contains("http://127.0.0.1:57321/v1")
-    );
+    let config = std::fs::read_to_string(home.join("config.toml")).unwrap();
+    assert!(config.contains(r#"model_provider = "touka""#));
+    assert!(config.contains("[model_providers.touka]"));
+    assert!(config.contains(r#"name = "Touka""#));
+    assert!(config.contains("http://127.0.0.1:57321/v1"));
     assert_eq!(
         std::fs::read_to_string(home.join("auth.json")).unwrap(),
         "{\"auth_mode\":\"chatgpt\"}\n"
@@ -378,7 +381,7 @@ model = "gpt-5-mini"
     let updated = std::fs::read_to_string(temp.path().join("config.toml")).unwrap();
 
     assert!(!result.configured);
-    assert!(result.backup_path.is_none());
+    assert!(result.backup_path.is_some());
     assert!(updated.contains(r#"model = "gpt-5""#));
     assert!(updated.contains(r#"model_provider = "chatgpt""#));
     assert!(!updated.contains("OPENAI_API_KEY"));

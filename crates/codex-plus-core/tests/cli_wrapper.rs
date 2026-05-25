@@ -81,10 +81,9 @@ fn wrapper_dir_uses_roaming_codex_plus_plus() {
     let wrapper_dir = wrapper_dir_from_roaming(&roaming);
 
     assert_eq!(
-        wrapper_dir.file_name().and_then(|name| name.to_str()),
-        Some("Codex++")
+        wrapper_dir.as_os_str().to_string_lossy(),
+        r"C:\Users\me\AppData\Roaming\Codex++"
     );
-    assert_eq!(wrapper_dir.parent(), Some(roaming.as_path()));
 }
 
 #[test]

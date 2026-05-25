@@ -1,6 +1,7 @@
 use serde::Serialize;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::settings::{RelayProfile, RelayProtocol};
 
@@ -196,6 +197,7 @@ pub fn apply_relay_files_to_home(
 
     let config_path = home.join("config.toml");
     let auth_path = home.join("auth.json");
+    let config_contents = normalize_relay_provider_config(config_contents);
 
     std::fs::write(&config_path, config_contents)?;
     std::fs::write(&auth_path, auth_contents)?;
@@ -218,6 +220,7 @@ pub fn apply_relay_config_file_to_home(
     std::fs::create_dir_all(home)?;
 
     let config_path = home.join("config.toml");
+    let config_contents = normalize_relay_provider_config(config_contents);
 
     std::fs::write(&config_path, config_contents)?;
 
@@ -529,6 +532,45 @@ fn upsert_model_provider_config(contents: &str, base_url: &str, bearer_token: &s
     output
 }
 
+fn normalize_relay_provider_config(contents: &str) -> String {
+    let mut updated = upsert_root_keys(
+        contents,
+        &[(
+            "model_provider",
+            format!("\"{}\"", toml_escape(RELAY_PROVIDER)),
+        )],
+    );
+    updated = remove_table(&updated, &format!("model_providers.{RELAY_PROVIDER}"));
+    for provider in LEGACY_RELAY_PROVIDERS {
+        if let Some(mut values) = table_values(contents, &format!("model_providers.{provider}")) {
+            values.insert("name".to_string(), format!("\"{}\"", toml_escape(RELAY_PROVIDER_NAME)));
+            updated = remove_table(&updated, &format!("model_providers.{provider}"));
+            let mut lines = updated.lines().map(ToString::to_string).collect::<Vec<_>>();
+            let insert_at = first_non_provider_table_index(&lines).unwrap_or(lines.len());
+            let mut provider_lines = vec![format!("[model_providers.{RELAY_PROVIDER}]")];
+            for key in [
+                "name",
+                "wire_api",
+                "requires_openai_auth",
+                "base_url",
+                "experimental_bearer_token",
+            ] {
+                if let Some(value) = values.get(key) {
+                    provider_lines.push(format!("{key} = {value}"));
+                }
+            }
+            provider_lines.push(String::new());
+            lines.splice(insert_at..insert_at, provider_lines);
+            let mut output = lines.join("\n");
+            if !output.ends_with('\n') {
+                output.push('\n');
+            }
+            return output;
+        }
+    }
+    updated
+}
+
 fn remove_relay_provider_tables(contents: &str) -> String {
     std::iter::once(RELAY_PROVIDER)
         .chain(LEGACY_RELAY_PROVIDERS.iter().copied())
@@ -622,4 +664,11 @@ fn root_line_key(line: &str) -> Option<&str> {
 
 fn toml_escape(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn now_ms() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
 }

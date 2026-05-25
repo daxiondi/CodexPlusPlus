@@ -156,7 +156,8 @@ fn relay_settings_keeps_profile_config_and_auth_files_isolated() {
     assert!(app_tsx.contains("authContents: files.authContents"));
     assert!(app_tsx.contains("relayProfileSwitchValidation(selectedBeforeSave)"));
     assert!(app_tsx.contains("缺少独立 config.toml"));
-    assert!(app_tsx.contains("const command = selectedAfterSave.relayMode === \"pureApi\" ? \"apply_pure_api_injection\" : \"apply_relay_injection\""));
+    assert!(app_tsx.contains("const command = relayProfileSwitchCommand(selectedAfterSave)"));
+    assert!(app_tsx.contains("if (profile.relayMode === \"pureApi\") return \"apply_pure_api_injection\""));
     assert!(!commands_rs.contains("缺少独立 auth.json"));
     assert!(commands_rs.contains("apply_relay_files_to_home"));
 }
